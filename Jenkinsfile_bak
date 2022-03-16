@@ -1,0 +1,31 @@
+pipeline {
+  agent any
+  stages {
+    stage('Build') {
+      steps {
+        sh '/opt/maven/apache-maven-3.6.2/bin/mvn clean compile'
+      }
+    }
+
+    stage('Unit Test') {
+      steps {
+        sh '/opt/maven/apache-maven-3.6.2/bin/mvn test'
+        junit '**/target/surefire-reports/TEST-*.xml'
+      }
+    }
+
+    stage('Publish') {
+      steps {
+        sh '/opt/maven/apache-maven-3.6.2/bin/mvn package'
+        archive 'target/*.jar'
+      }
+    }
+
+    stage('upload') {
+      steps {
+        sh 'sshpass -p\'sigongweb!@#\' scp -P 16215 -o StrictHostKeyChecking=no target/*.jar sigongweb@10.0.1.209:/home/infra/apps/springboot'
+      }
+    }
+
+  }
+}

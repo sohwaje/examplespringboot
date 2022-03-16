@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ctool-admin
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ctool-admin
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  minReadySeconds: 5
+  template:
+    metadata:
+      labels:
+        app: ctool-admin
+    spec:
+      nodeSelector:
+        "beta.kubernetes.io/os": linux
+      containers:
+      - name: ctool-admin
+        image: hiclass.azurecr.io/ctool-admin:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 19083
+        resources:
+          requests:
+            cpu: 1000m
+          limits:
+            cpu: 1000m
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 19083
+            scheme: HTTP
+          initialDelaySeconds: 150
+          periodSeconds: 3
+          timeoutSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 19083
+            scheme: HTTP
+          initialDelaySeconds: 150
+          periodSeconds: 3
+          timeoutSeconds: 10
+      imagePullSecrets:
+        - name: acrsecret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ctool-admin
+spec:
+  # type: LoadBalancer
+  type: ClusterIP  # required ingress
+  ports:
+  - port: 80
+    targetPort: 19083
+  selector:
+    app: ctool-admin

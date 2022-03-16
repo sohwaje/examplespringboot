@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ctool-front
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ctool-front
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  minReadySeconds: 5
+  template:
+    metadata:
+      labels:
+        app: ctool-front
+    spec:
+      nodeSelector:
+        "beta.kubernetes.io/os": linux
+      containers:
+      - name: ctool-front
+        image: hiclass.azurecr.io/ctool-front:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 19080
+        resources:
+          requests:
+            cpu: 1000m
+          limits:
+            cpu: 1000m
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 19080
+            scheme: HTTP
+          initialDelaySeconds: 150
+          periodSeconds: 3
+          timeoutSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 19080
+            scheme: HTTP
+          initialDelaySeconds: 150
+          periodSeconds: 3
+          timeoutSeconds: 10
+      imagePullSecrets:
+        - name: acrsecret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ctool-front
+spec:
+  # type: LoadBalancer
+  type: ClusterIP  # required ingress
+  ports:
+  - port: 80
+    targetPort: 19080
+  selector:
+    app: ctool-front

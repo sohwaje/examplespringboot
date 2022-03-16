@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ctool-websocket
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: ctool-websocket
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  minReadySeconds: 5
+  template:
+    metadata:
+      labels:
+        app: ctool-websocket
+    spec:
+      nodeSelector:
+        "beta.kubernetes.io/os": linux
+      containers:
+      - name: ctool-websocket
+        image: hiclass.azurecr.io/ctool-websocket:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 19082
+        resources:
+          requests:
+            cpu: 1000m
+          limits:
+            cpu: 1000m
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 19082
+            scheme: HTTP
+          initialDelaySeconds: 150
+          periodSeconds: 3
+          timeoutSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 19082
+            scheme: HTTP
+          initialDelaySeconds: 150
+          periodSeconds: 3
+          timeoutSeconds: 10
+      imagePullSecrets:
+        - name: acrsecret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ctool-websocket
+spec:
+  # type: LoadBalancer
+  type: ClusterIP  # required ingress
+  ports:
+  - port: 80
+    targetPort: 19082
+  selector:
+    app: ctool-websocket
